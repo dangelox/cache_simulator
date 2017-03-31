@@ -3,9 +3,10 @@
 
 int main(int argc, char* argv []) {
 
+	// command line input filename
 	char * filename;
 
-	//Print the table header
+	// Check for command line arguments
 	if ((argv[1]) != NULL) {
 		filename = argv[1];
 	} else {
@@ -14,6 +15,7 @@ int main(int argc, char* argv []) {
 		return(1);
 	}
 
+	// Setup variables for program
 	FILE *ptr_file;
 	int value;
 	char buffer[4];
@@ -27,8 +29,6 @@ int main(int argc, char* argv []) {
 		return (1);
 	}
 
-	printf("Sizes of int %d\n", sizeof(int));
-
 	//size of file
 	fseek(ptr_file, 0, SEEK_END);
 	long fileSize = ftell(ptr_file);
@@ -39,13 +39,13 @@ int main(int argc, char* argv []) {
 	long numberOfEntries = fileSize / sizeof(int);
 	printf("number of entries : %d\n", numberOfEntries);
 
-// Read the next address from the file
-//	fseek(ptr_file, 2*sizeof(int), SEEK_SET);
-
+	// Set file cursor to the beginning of the file
 	fseek(ptr_file, 0, SEEK_SET);
 
-	int i = 0;
 
+	// Print first 10 vales from file to screen.
+	// Testing purposes only, remove at the end.
+	int i = 0;
 	while(fread(&value,sizeof(int),1, ptr_file) == 1){
 		printf("value %d\n", value);
 		i++;
@@ -54,28 +54,12 @@ int main(int argc, char* argv []) {
 		}
 	}
 
-//    size_t temp = fread(&value,sizeof(int),1, ptr_file);
-//	printf("temp %d\n", temp);
-//
-//
-
-//	fread(&value,sizeof(int),1, ptr_file);
-//	printf("value %d\n", value);
-//
-//	fseek(ptr_file, (64*sizeof(int))+1, SEEK_SET);
-//	fread(&value, sizeof(int), 1, ptr_file);
-//	printf("value %d\n", value);
-//
-//	fseek(ptr_file, (64*sizeof(int))+1, SEEK_SET);
-//	fread(&value, sizeof(int), 1, ptr_file);
-//	printf("value %d\n", value);
-
-// Close file
+	// Close file
 	if (fclose(ptr_file) != 0) {
 		printf("Error: File Not Closed!\n");
 	}
 
-	//Clean up variables
-//	free(filename);
+	// Clean up variables
+	//free(filename);
 	return (0);
 }
