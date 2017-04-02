@@ -85,25 +85,24 @@ int main(int argc, char* argv[]) {
 
 		// bit-shift the value read from file to calculate
 		// line number and tag
-		unsigned int tlb = value;
-		unsigned int t = tlb >> 15;
-		unsigned int l = ((tlb << 17) >> 17) >> 6;
+		unsigned int tag = value >> 15;
+		unsigned int line = ((value << 17) >> 17) >> 6;
 
 		// Check for cache miss
-		if (cache[l].m_tag != t) {
+		if (cache[line].m_tag != tag) {
 
 			cache_misses++; // increment the miss counter
 
 			// Set the tag and vaild bit.
-			cache[l].m_tag = t;
-			cache[l].m_vaild = 1;
+			cache[line].m_tag = tag;
+			cache[line].m_vaild = 1;
 
-			cache[l].m_line = l; //testing purpose, DELETE
-			cache[l].m_value = value; //testing purpose, DELETE
+			cache[line].m_line = line; //testing purpose, DELETE
+			cache[line].m_value = value; //testing purpose, DELETE
 		}
 
 		// Check for cache hit
-		if ((cache[l].m_vaild == 1) && (cache[l].m_tag == t)) {
+		if ((cache[line].m_vaild == 1) && (cache[line].m_tag == tag)) {
 			cache_hits++; // increase the hit counter
 			// cache is not updated since it was hit
 		}
