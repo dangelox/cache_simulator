@@ -22,23 +22,24 @@ char *getBinary(unsigned int num) {
 
 int main() {
 
-	unsigned int tlb = 251686912;
-	unsigned int tl = tlb >> 6;
-	unsigned int t = tl >> 9;
+	unsigned int tlb = 251342856;
+//	unsigned int tl = tlb >> 6;
+//	unsigned int t = tl >> 9;
 
-	unsigned int l = (tl << 17) >> 17;
+	unsigned int t = tlb >> 15;
+	unsigned int l = ((tlb << 17) >> 17) >> 6;
 
 	printf("tlb : %d\n", tlb);
-	printf("tl  : %d\n", tl);
+//	printf("tl  : %d\n", tl);
 	printf("t   : %d\n", t);
 	printf("l   : %d\n", l);
 
 	printf("tlb : %s\n", getBinary(tlb));
-	printf("tl  : %s\n", getBinary(tl));
+//	printf("tl  : %s\n", getBinary(tl));
 	printf("t   : %s\n", getBinary(t));
 	printf("l   : %s\n", getBinary(l));
 
-	unsigned int tlb2 = 251686913;
+	unsigned int tlb2 = 247148552;
 	unsigned int tl2 = tlb2 >> 6;
 	unsigned int t2 = tl2 >> 9;
 

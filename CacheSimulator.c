@@ -10,24 +10,22 @@ typedef struct _line_t {
 
 line_t cache[512];
 
-char *getBinary(unsigned int num)
-{
-    char* bstring;
-    int i;
+char *getBinary(unsigned int num) {
+	char* bstring;
+	int i;
 
-    /* Calculate the Binary String */
+	/* Calculate the Binary String */
 
-    bstring = (char*) malloc(sizeof(char) * 33);
-    //assert(bstring != NULL);
+	bstring = (char*) malloc(sizeof(char) * 33);
+	//assert(bstring != NULL);
 
-    bstring[32] = '\0';
+	bstring[32] = '\0';
 
-    for( i = 0; i < 32; i++ )
-    {
-        bstring[32 - 1 - i] = (num == ((1 << i) | num)) ? '1' : '0';
-    }
+	for (i = 0; i < 32; i++) {
+		bstring[32 - 1 - i] = (num == ((1 << i) | num)) ? '1' : '0';
+	}
 
-    return bstring;
+	return bstring;
 }
 
 int main(int argc, char* argv[]) {
@@ -48,6 +46,8 @@ int main(int argc, char* argv[]) {
 	FILE *ptr_file;
 	unsigned int value;
 	char buffer[4];
+
+	int hit = 0, miss = 0;
 
 	// Open file in read mode
 	ptr_file = fopen(filename, "rb");
@@ -78,18 +78,39 @@ int main(int argc, char* argv[]) {
 		//printf("value %d\n", value);
 
 		unsigned int tlb = value;
-		unsigned int tl = tlb >> 6;
-		unsigned int t = tl >> 9;
-		unsigned int l = (tl << 17) >> 17;
+//		unsigned int tl = tlb >> 6;
+//		unsigned int t = tl >> 9;
+//		unsigned int l = (tl << 17) >> 17;
 
-		cache[i].m_value = value;
-		cache[i].m_line = l;
-		cache[i].m_tag = t;
-		cache[i].m_vaild = 1;
-		i++;
-		if (i == 512) {
-			break;
+		unsigned int t = tlb >> 15;
+		unsigned int l = ((tlb << 17) >> 17) >> 6;
+
+//		cache[i].m_value = value;
+//		cache[i].m_line = l;
+//		cache[i].m_tag = t;
+//		cache[i].m_vaild = 1;
+
+		// miss
+		if (cache[l].m_tag != t) {
+			miss++;
+			cache[l].m_line = l;
+			cache[l].m_tag = t;
+			cache[l].m_vaild = 1;
+			cache[l].m_value = value;
 		}
+		// hit
+		if ((cache[l].m_vaild == 1) && (cache[l].m_tag == t)) {
+			hit++;
+		}
+
+
+
+//		printf("i:%d ,value:%d ,tag:%d ,l:%d\n",i,tlb,t,l);
+
+		i++;
+//		if (i == 1024) {
+//			break;
+//		}
 	}
 
 	//print cache
@@ -97,12 +118,20 @@ int main(int argc, char* argv[]) {
 		printf("cache %d : value:%d ,tag:%d ,line:%d ,valid=%d\n", i,
 				cache[i].m_value, cache[i].m_tag, cache[i].m_line,
 				cache[i].m_vaild);
-		printf("tlb : %s\n", getBinary(cache[i].m_value));
-		printf("t   : %s\n", getBinary(cache[i].m_tag));
-		printf("l   : %s\n", getBinary(cache[i].m_line));
-		printf("------------------\n");
+//		printf("tlb : %s\n", getBinary(cache[i].m_value));
+//		printf("t   : %s\n", getBinary(cache[i].m_tag));
+//		printf("l   : %s\n", getBinary(cache[i].m_line));
+//		printf("------------------\n");
 
 	}
+
+	//print status
+	printf("hits:%d\n",hit);
+	printf("miss:%d\n",miss);
+
+	double r = ((double)hit / (hit + miss));
+
+	printf("cache hit ratio: %2.2f%\n", r * 100);
 
 	// Close file
 	if (fclose(ptr_file) != 0) {
