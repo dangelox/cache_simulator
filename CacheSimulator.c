@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 //Address Size
 #define ADDRESS_SIZE_EXP 32
@@ -34,6 +35,8 @@ void printCommandFormatMessage() {
  * Main program that simulate cache mechanism
  */
 int main(int argc, char* argv[]) {
+
+	srand(time(NULL));
 
 	// command line input filename
 	char * filename;
@@ -99,12 +102,8 @@ int main(int argc, char* argv[]) {
 	TAG_SIZE = (1 << TAG_EXP);
 	TAG_SIZE_MASK = (TAG_SIZE - 1);
 
-	printf("Cache Associativity      : %d\n", CACHE_ASSOCIATIVITY);
-	printf("Number of lines in cache : %d\n", LINE_SIZE);
-
 	/**
-	 Array that mimics the direct associate cache.
-	 # number of entries = 32 MB / 64 B = 512
+	 Array that mimics cache.
 	 */
 	line_t cache[LINE_SIZE][CACHE_ASSOCIATIVITY];
 
@@ -154,25 +153,28 @@ int main(int argc, char* argv[]) {
 		unsigned int tag = value >> (LINE_SIZE_EXP + BLOCK_SIZE_EXP);
 		unsigned int line = ((value << TAG_EXP) >> TAG_EXP) >> BLOCK_SIZE_EXP;
 
-		int isFound = 0;
+		int isFound = 0; // Auxiliary variable indicate cache hit
 
-		// Check for cache miss
+		// Check for cache hit
 		for (int r = 0; r < CACHE_ASSOCIATIVITY; ++r) {
 			if ((cache[line][r].m_vaild == 1)
 					&& (cache[line][r].m_tag == tag)) {
 				cache_hits++; // increase the hit counter
 				// cache is not updated since it was hit
-				isFound = 1;
+				isFound = 1; // address has been found in cache
 				break;
 			}
 		}
 
-		// address not found
+		// Address is not found in cache will result a cache miss
 		if (isFound == 0) {
-			int isCacheUpdated = 0;
-			//find the first invalid or empty block and write.
+			int isCacheUpdated = 0; // Auxiliary variable indicate cache has been updated
+
+			// Find the first invalid or empty block and write.
+			// This will only occur  starting from a empty cache
 			for (int s = 0; s < CACHE_ASSOCIATIVITY; ++s) {
-				if (cache[line][s].m_vaild == 0) {
+				if ((cache[line][s].m_vaild == 0)
+						&& (cache[line][s].m_tag == 0)) {
 					//invalid block
 					cache_misses++;
 					cache[line][s].m_tag = tag;
@@ -184,13 +186,24 @@ int main(int argc, char* argv[]) {
 				}
 			}
 
+			// Cache already full, now have to replace a block
 			if (isCacheUpdated == 0) {
-				//all blocks are full, have to replace one
-				cache_misses++;
-				cache[line][0].m_tag = tag;
-				cache[line][0].m_vaild = 1;
-				cache[line][0].m_line = line; //testing purpose, DELETE
-				cache[line][0].m_value = value; //testing purpose, DELETE
+				cache_misses++; // increment the miss count
+
+				// Replace the cache block
+
+//				int temp = (CACHE_ASSOCIATIVITY-1);
+				int temp = (rand() % ((CACHE_ASSOCIATIVITY-1) + 1 - 0) + 0);
+//				int temp = 10;
+
+
+
+				cache[line][5].m_tag = tag;
+				cache[line][5].m_vaild = 1;
+				cache[line][5].m_line = line; //testing purpose, DELETE
+				cache[line][5].m_value = value; //testing purpose, DELETE
+
+//				printf("%d: replace [%d][%d] : %d\n",line,temp,cache[line][temp].m_value); //testing purpose, DELETE
 			}
 		}
 	} // end while
@@ -205,11 +218,25 @@ int main(int argc, char* argv[]) {
 	}
 	printf("------------------------------------\n");
 
+//	printf("2D CACHE\n");
+//	for (int i = 0; i < LINE_SIZE; ++i) {
+//		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
+//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_value);
+//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_tag);
+//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_line);
+//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_vaild);
+//		}
+//		printf("\n");
+//	}
+//	printf("------------------------------------\n");
+
 	// print all the status to console
 	printf("                     CACHE REPORT\n");
 	printf("=======================================================\n");
 	printf("Data filename	         : %s\n", filename);
 	printf("Cache Associativity      : %d\n", CACHE_ASSOCIATIVITY);
+	printf("Size of L1 Cache         : %d\n", CACHE_SIZE);
+	printf("Size of a Block          : %d\n", BLOCK_SIZE);
 	printf("Number of lines in cache : %d\n", LINE_SIZE);
 	printf("Number of Block bits     : %d\n", BLOCK_SIZE_EXP);
 	printf("Number of Line bits      : %d\n", LINE_SIZE_EXP);
