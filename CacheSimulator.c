@@ -1,7 +1,19 @@
+//*****************************************************************************
+//
+//	Program:		CacheSimulator.c
+//	Author:			Dilesh Fernando <fernando.dilesh@gmail.com>
+//					Cheng-Yeh Lee <chengyeh90@gmail.com>
+//					Vuong Nguyen <nptvuong2912@gmail.com>
+//	Date:			2017-04-04 (B70203)
+//	Description:	A program to simulate L1 cache.
+//
+//*****************************************************************************
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
+// Define global cache constants
 //Address Size
 #define ADDRESS_SIZE_EXP 32
 
@@ -15,16 +27,19 @@
 #define BLOCK_SIZE_MASK (BLOCK_SIZE - 1)
 
 /**
- Cache line Data Structure
- Following structure will hold all the data associated with line in cache.
+ * Cache line Data Structure
+ * Following structure will hold all the data associated with line in cache.
  */
 typedef struct _line_t {
 	unsigned int m_tag;
-	int m_vaild;
+	int m_valid;
 
 	unsigned int m_value, m_line; //testing purpose, DELETE
 } line_t;
 
+/**
+ * Helper function to print command line argument error message
+ */
 void printCommandFormatMessage() {
 	printf("Please enter command in following format.\n");
 	printf("$ ./CacheSimulator <cache associativity> <name of data file>\n");
@@ -36,27 +51,36 @@ void printCommandFormatMessage() {
  */
 int main(int argc, char* argv[]) {
 
-	srand(time(NULL));
+	// Random number generation variables
+	time_t t;
+	srand((unsigned) time(&t));
 
-	// command line input filename
-	char * filename;
+	// Setup variables for the program
 	int CACHE_ASSOCIATIVITY_EXP = 0, CACHE_ASSOCIATIVITY = 0, LINE_SIZE_EXP = 0,
-			LINE_SIZE = 0;
-	int TAG_EXP, TAG_SIZE, TAG_SIZE_MASK;
+			LINE_SIZE = 0, TAG_EXP = 0, TAG_SIZE = 0, TAG_SIZE_MASK = 0;
 
+	char * filename; // Name of command line input filename
+	FILE *ptr_file;
+
+	unsigned int value; // address read from data file
+	int cache_hits = 0, cache_misses = 0; // keep track of hits and misses
+
+	// Check for command line arguments
+	// Check command line arguments are less than required number
 	if (argc < 2) {
 		printf("ERROR: Insufficient command line arguments.\n");
 		printCommandFormatMessage();
 		return (1);
 	}
 
+	// Check command line arguments are more than required number
 	if (argc > 3) {
 		printf("ERROR: Too many command line arguments.\n");
 		printCommandFormatMessage();
 		return (1);
 	}
 
-	// Check for command line arguments
+	// Right number of command line arguments
 	if (argc == 3) {
 		// Check command line cache associativity argument
 		if (atoi(argv[1]) == 0) {
@@ -72,6 +96,7 @@ int main(int argc, char* argv[]) {
 		} else if (atoi(argv[1]) == 8) {
 			CACHE_ASSOCIATIVITY_EXP = 3;
 		} else {
+			// Command line argument cache associativity have failed.
 			printf("Error: Cache associativity must be 1,2,4, or 8.\n");
 			printCommandFormatMessage();
 			return (1);
@@ -81,17 +106,19 @@ int main(int argc, char* argv[]) {
 		if (argv[2] != NULL) {
 			filename = argv[2];
 		} else {
+			// Command line argument filename have failed.
 			printf("Error: Error in input file name command line argument.\n");
 			printCommandFormatMessage();
 			return (1);
 		}
 	} else {
+		// Command line arguments have failed.
 		printf("ERROR: Error in command line arguments.\n");
 		printCommandFormatMessage();
 		return (1);
 	}
 
-	// Calculate
+	// Calculate tag and line size
 	CACHE_ASSOCIATIVITY = (1 << CACHE_ASSOCIATIVITY_EXP);
 
 	LINE_SIZE_EXP =
@@ -103,7 +130,7 @@ int main(int argc, char* argv[]) {
 	TAG_SIZE_MASK = (TAG_SIZE - 1);
 
 	/**
-	 Array that mimics cache.
+	 Setup the array that mimics cache.
 	 */
 	line_t cache[LINE_SIZE][CACHE_ASSOCIATIVITY];
 
@@ -111,17 +138,12 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < LINE_SIZE; ++i) {
 		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
 			cache[i][j].m_tag = 0;
-			cache[i][j].m_vaild = 0;
+			cache[i][j].m_valid = 0;
 
 			cache[i][j].m_line = 0; //DELETE
 			cache[i][j].m_value = 0; //DELETE
 		}
 	}
-
-	// Setup variables for program
-	FILE *ptr_file;
-	unsigned int value; // address read from data file
-	int cache_hits = 0, cache_misses = 0; // keep track of hits and misses
 
 	// Open file in read mode
 	ptr_file = fopen(filename, "rb");
@@ -131,16 +153,6 @@ int main(int argc, char* argv[]) {
 		printf("Error: Unable to Open File!\n");
 		return (1);
 	}
-
-	// Testing info, DELETE
-	fseek(ptr_file, 0, SEEK_END);
-	long fileSize = ftell(ptr_file);
-	rewind(ptr_file);
-	long numberOfEntries = fileSize / sizeof(int);
-	printf("TESTING INFO\n");
-	printf("filesize          : %d\n", fileSize);
-	printf("number of entries : %d\n", numberOfEntries);
-	printf("------------------------------------\n");
 
 	// Set file cursor to the beginning of the file
 	fseek(ptr_file, 0, SEEK_SET);
@@ -157,7 +169,7 @@ int main(int argc, char* argv[]) {
 
 		// Check for cache hit
 		for (int r = 0; r < CACHE_ASSOCIATIVITY; ++r) {
-			if ((cache[line][r].m_vaild == 1)
+			if ((cache[line][r].m_valid == 1)
 					&& (cache[line][r].m_tag == tag)) {
 				cache_hits++; // increase the hit counter
 				// cache is not updated since it was hit
@@ -173,15 +185,16 @@ int main(int argc, char* argv[]) {
 			// Find the first invalid or empty block and write.
 			// This will only occur  starting from a empty cache
 			for (int s = 0; s < CACHE_ASSOCIATIVITY; ++s) {
-				if ((cache[line][s].m_vaild == 0)
+				if ((cache[line][s].m_valid == 0)
 						&& (cache[line][s].m_tag == 0)) {
-					//invalid block
-					cache_misses++;
+					// Found the first invalid block
+					cache_misses++; // increase the miss count
+
+					// Update the block
 					cache[line][s].m_tag = tag;
-					cache[line][s].m_vaild = 1;
-					cache[line][s].m_line = line; //testing purpose, DELETE
-					cache[line][s].m_value = value; //testing purpose, DELETE
-					isCacheUpdated = 1;
+					cache[line][s].m_valid = 1;
+
+					isCacheUpdated = 1; // Set aux variable
 					break;
 				}
 			}
@@ -191,46 +204,19 @@ int main(int argc, char* argv[]) {
 				cache_misses++; // increment the miss count
 
 				// Replace the cache block
-
 //				int temp = (CACHE_ASSOCIATIVITY-1);
-				int temp = (rand() % ((CACHE_ASSOCIATIVITY-1) + 1 - 0) + 0);
-//				int temp = 10;
+				int temp = (rand() % ((CACHE_ASSOCIATIVITY - 1) + 1 - 0) + 0);
+//				int temp = 0;
 
-
-
-				cache[line][5].m_tag = tag;
-				cache[line][5].m_vaild = 1;
-				cache[line][5].m_line = line; //testing purpose, DELETE
-				cache[line][5].m_value = value; //testing purpose, DELETE
-
-//				printf("%d: replace [%d][%d] : %d\n",line,temp,cache[line][temp].m_value); //testing purpose, DELETE
+				// Update the block
+				cache[line][temp].m_tag = tag;
+				cache[line][temp].m_valid = 1;
 			}
 		}
 	} // end while
 
-	// Print cache, DELETE
-	printf("2D CACHE\n");
-	for (int i = 0; i < LINE_SIZE; ++i) {
-		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
-			printf("[%d,%d]: %d  ", i, j, cache[i][j].m_value);
-		}
-		printf("\n");
-	}
-	printf("------------------------------------\n");
-
-//	printf("2D CACHE\n");
-//	for (int i = 0; i < LINE_SIZE; ++i) {
-//		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
-//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_value);
-//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_tag);
-//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_line);
-//			printf("[%d,%d]: %d\n", i, j, cache[i][j].m_vaild);
-//		}
-//		printf("\n");
-//	}
-//	printf("------------------------------------\n");
-
-	// print all the status to console
+	// Print cache report
+	printf("=======================================================\n");
 	printf("                     CACHE REPORT\n");
 	printf("=======================================================\n");
 	printf("Data filename	         : %s\n", filename);
@@ -246,14 +232,12 @@ int main(int argc, char* argv[]) {
 	printf("Number of cache misses   : %d\n", cache_misses);
 	printf("Cache hit ratio          : %2.2f%\n",
 			((double) cache_hits / (cache_hits + cache_misses)) * 100);
-	printf("-------------------------------------------------------\n");
+	printf("=======================================================\n");
 
 	// Close file
 	if (fclose(ptr_file) != 0) {
 		printf("Error: File Not Closed!\n");
 	}
-
-	// Clean up variables
 
 	return (0);
 }
