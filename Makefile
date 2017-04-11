@@ -1,6 +1,9 @@
 all: CacheSimulator.c
 	gcc CacheSimulator.c -o CacheSimulator
 
+v1: CacheSimulator_v1.c
+	gcc CacheSimulator_v1.c -o CacheSimulator_v1
+	
 github_create:
 	echo "# Cache-Simulator" >> README.md
 	git init

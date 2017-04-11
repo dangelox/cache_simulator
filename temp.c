@@ -1,6 +1,8 @@
 //hello_world.c
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
 
 char *getBinary(unsigned int num) {
 	char* bstring;
@@ -22,12 +24,14 @@ char *getBinary(unsigned int num) {
 
 int main() {
 
-	unsigned int tlb = 251342856;
+//	srand(time(NULL));
+//
+	unsigned int tlb = 168796156;
 //	unsigned int tl = tlb >> 6;
 //	unsigned int t = tl >> 9;
 
-	unsigned int t = tlb >> 15;
-	unsigned int l = ((tlb << 17) >> 17) >> 6;
+	unsigned int t = tlb >> 13;
+	unsigned int l = ((tlb << 19) >> 19) >> 6;
 
 	printf("tlb : %d\n", tlb);
 //	printf("tl  : %d\n", tl);
@@ -54,5 +58,21 @@ int main() {
 	printf("tl  : %s\n", getBinary(tl2));
 	printf("t   : %s\n", getBinary(t2));
 	printf("l   : %s\n", getBinary(l2));
+//
+//	printf("-------------");
+//	printf("Associate: %d\n", 1<<0);
+
+//	for (int i = 0; i < 100; ++i) {
+//		printf("%d\n", (rand() % (7 + 1 - 0) + 0));
+//	}
+
+//	for (int i = 0; i < 10; ++i) {
+//		printf("%d\n",i);
+//		if (i == 7){
+//			break;
+//		}
+//	}
+
+	int temp = (rand() % ((CACHE_ASSOCIATIVITY-1) + 1 - 0) + 0);
 	return (0);
 }

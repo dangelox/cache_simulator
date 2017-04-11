@@ -65,6 +65,15 @@ int main(int argc, char* argv[]) {
 	unsigned int value; // address read from data file
 	int cache_hits = 0, cache_misses = 0; // keep track of hits and misses
 
+	FILE *ptr_file2;
+	ptr_file2 = fopen("data_8.txt", "a");
+
+	// Check the file is valid
+	if (!ptr_file2) {
+		printf("Error: Unable to Open text File!\n");
+		return (1);
+	}
+
 	// Check for command line arguments
 	// Check command line arguments are less than required number
 	if (argc < 2) {
@@ -134,16 +143,16 @@ int main(int argc, char* argv[]) {
 	 */
 	line_t cache[LINE_SIZE][CACHE_ASSOCIATIVITY];
 
-	// Initialize array values to zero
-	for (int i = 0; i < LINE_SIZE; ++i) {
-		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
-			cache[i][j].m_tag = 0;
-			cache[i][j].m_valid = 0;
-
-			cache[i][j].m_line = 0; //DELETE
-			cache[i][j].m_value = 0; //DELETE
-		}
-	}
+//	// Initialize array values to zero
+//	for (int i = 0; i < LINE_SIZE; ++i) {
+//		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
+//			cache[i][j].m_tag = 0;
+//			cache[i][j].m_valid = 0;
+//
+//			cache[i][j].m_line = 0; //DELETE
+//			cache[i][j].m_value = 0; //DELETE
+//		}
+//	}
 
 	// Open file in read mode
 	ptr_file = fopen(filename, "rb");
@@ -154,90 +163,126 @@ int main(int argc, char* argv[]) {
 		return (1);
 	}
 
-	// Set file cursor to the beginning of the file
-	fseek(ptr_file, 0, SEEK_SET);
+//	// Set file cursor to the beginning of the file
+//	fseek(ptr_file, 0, SEEK_SET);
 
-	// Main loop, read data from file and insert to cache
-	while (fread(&value, sizeof(int), 1, ptr_file) == 1) {
+	for (int z = 0; z < 100; ++z) {
+		cache_hits = 0;
+		cache_misses = 0;
 
-		// bit-shift the value read from file to calculate
-		// line number and tag
-		unsigned int tag = value >> (LINE_SIZE_EXP + BLOCK_SIZE_EXP);
-		unsigned int line = ((value << TAG_EXP) >> TAG_EXP) >> BLOCK_SIZE_EXP;
+		// Initialize array values to zero
+		for (int i = 0; i < LINE_SIZE; ++i) {
+			for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
+				cache[i][j].m_tag = 0;
+				cache[i][j].m_valid = 0;
 
-		int isFound = 0; // Auxiliary variable indicate cache hit
-
-		// Check for cache hit
-		for (int r = 0; r < CACHE_ASSOCIATIVITY; ++r) {
-			if ((cache[line][r].m_valid == 1)
-					&& (cache[line][r].m_tag == tag)) {
-				cache_hits++; // increase the hit counter
-				// cache is not updated since it was hit
-				isFound = 1; // address has been found in cache
-				break;
+				cache[i][j].m_line = 0; //DELETE
+				cache[i][j].m_value = 0; //DELETE
 			}
 		}
 
-		// Address is not found in cache will result a cache miss
-		if (isFound == 0) {
-			int isCacheUpdated = 0; // Auxiliary variable indicate cache has been updated
+		// Set file cursor to the beginning of the file
+		fseek(ptr_file, 0, SEEK_SET);
 
-			// Find the first invalid or empty block and write.
-			// This will only occur  starting from a empty cache
-			for (int s = 0; s < CACHE_ASSOCIATIVITY; ++s) {
-				if ((cache[line][s].m_valid == 0)
-						&& (cache[line][s].m_tag == 0)) {
-					// Found the first invalid block
-					cache_misses++; // increase the miss count
+		// Main loop, read data from file and insert to cache
+		while (fread(&value, sizeof(int), 1, ptr_file) == 1) {
 
-					// Update the block
-					cache[line][s].m_tag = tag;
-					cache[line][s].m_valid = 1;
+			// bit-shift the value read from file to calculate
+			// line number and tag
+			unsigned int tag = value >> (LINE_SIZE_EXP + BLOCK_SIZE_EXP);
+			unsigned int line = ((value << TAG_EXP) >> TAG_EXP)
+					>> BLOCK_SIZE_EXP;
 
-					isCacheUpdated = 1; // Set aux variable
+			int isFound = 0; // Auxiliary variable indicate cache hit
+
+			// Check for cache hit
+			for (int r = 0; r < CACHE_ASSOCIATIVITY; ++r) {
+				if ((cache[line][r].m_valid == 1)
+						&& (cache[line][r].m_tag == tag)) {
+					cache_hits++; // increase the hit counter
+					// cache is not updated since it was hit
+					isFound = 1; // address has been found in cache
 					break;
 				}
 			}
 
-			// Cache already full, now have to replace a block
-			if (isCacheUpdated == 0) {
-				cache_misses++; // increment the miss count
+			// Address is not found in cache will result a cache miss
+			if (isFound == 0) {
+				int isCacheUpdated = 0; // Auxiliary variable indicate cache has been updated
 
-				// Replace the cache block
+				// Find the first invalid or empty block and write.
+				// This will only occur  starting from a empty cache
+				for (int s = 0; s < CACHE_ASSOCIATIVITY; ++s) {
+					if ((cache[line][s].m_valid == 0)
+							&& (cache[line][s].m_tag == 0)) {
+						// Found the first invalid block
+						cache_misses++; // increase the miss count
+
+						// Update the block
+						cache[line][s].m_tag = tag;
+						cache[line][s].m_valid = 1;
+
+						isCacheUpdated = 1; // Set auxiliary variable
+						break;
+					}
+				}
+
+				// Cache already full, now have to replace a block
+				if (isCacheUpdated == 0) {
+					cache_misses++; // increment the miss count
+
+					// Replace the cache block
 //				int temp = (CACHE_ASSOCIATIVITY-1);
-				int temp = (rand() % ((CACHE_ASSOCIATIVITY - 1) + 1 - 0) + 0);
+					int temp =
+							(rand() % ((CACHE_ASSOCIATIVITY - 1) + 1 - 0) + 0);
 //				int temp = 0;
 
-				// Update the block
-				cache[line][temp].m_tag = tag;
-				cache[line][temp].m_valid = 1;
+					// Update the block
+					cache[line][temp].m_tag = tag;
+					cache[line][temp].m_valid = 1;
+				}
 			}
-		}
-	} // end while
+		} // end while
 
-	// Print cache report
-	printf("=======================================================\n");
-	printf("                     CACHE REPORT\n");
-	printf("=======================================================\n");
-	printf("Data filename	         : %s\n", filename);
-	printf("Cache Associativity      : %d\n", CACHE_ASSOCIATIVITY);
-	printf("Size of L1 Cache         : %d\n", CACHE_SIZE);
-	printf("Size of a Block          : %d\n", BLOCK_SIZE);
-	printf("Number of lines in cache : %d\n", LINE_SIZE);
-	printf("Number of Block bits     : %d\n", BLOCK_SIZE_EXP);
-	printf("Number of Line bits      : %d\n", LINE_SIZE_EXP);
-	printf("Number of Tag bits       : %d\n", TAG_EXP);
-	printf("-------------------------------------------------------\n");
-	printf("Number of cache hits     : %d\n", cache_hits);
-	printf("Number of cache misses   : %d\n", cache_misses);
-	printf("Cache hit ratio          : %2.2f%\n",
-			((double) cache_hits / (cache_hits + cache_misses)) * 100);
-	printf("=======================================================\n");
+	fprintf(ptr_file2, "%d\t%d\t%2.2f\n",cache_hits, cache_misses,(((double) cache_hits / (cache_hits + cache_misses)) * 100));
+}
+//	// Print cache, DELETE
+//	printf("2D CACHE\n");
+//	for (int i = 0; i < LINE_SIZE; ++i) {
+//		for (int j = 0; j < CACHE_ASSOCIATIVITY; ++j) {
+//			printf("[%d,%d]: %X  ", i, j, cache[i][j].m_tag);
+//		}
+//		printf("\n");
+//	}
 
-	// Close file
-	if (fclose(ptr_file) != 0) {
-		printf("Error: File Not Closed!\n");
-	}
+//	// Print cache report
+//	printf("\n");
+//	printf("=======================================================\n");
+//	printf("                     CACHE REPORT\n");
+//	printf("=======================================================\n");
+//	printf("Data filename	         : %s\n", filename);
+//	printf("Cache Associativity      : %d\n", CACHE_ASSOCIATIVITY);
+//	printf("Size of L1 Cache         : %d\n", CACHE_SIZE);
+//	printf("Size of a Block          : %d\n", BLOCK_SIZE);
+//	printf("Number of lines in cache : %d\n", LINE_SIZE);
+//	printf("Number of Block bits     : %d\n", BLOCK_SIZE_EXP);
+//	printf("Number of Line bits      : %d\n", LINE_SIZE_EXP);
+//	printf("Number of Tag bits       : %d\n", TAG_EXP);
+//	printf("-------------------------------------------------------\n");
+//	printf("Number of cache hits     : %d\n", cache_hits);
+//	printf("Number of cache misses   : %d\n", cache_misses);
+//	printf("Cache hit ratio          : %2.2f%\n",
+//			((double) cache_hits / (cache_hits + cache_misses)) * 100);
+//	printf("=======================================================\n");
 
-	return (0);
+// Close file
+if (fclose(ptr_file) != 0) {
+	printf("Error: File Not Closed!\n");
+}
+
+if (fclose(ptr_file2) != 0) {
+	printf("Error: File text Not Closed!\n");
+}
+
+return (0);
 }
